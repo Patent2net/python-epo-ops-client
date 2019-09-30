@@ -70,7 +70,15 @@ class Client(object):
         return self.request.post(
             url, data=data, headers=headers, params=params
         )
-
+    def _get(self, url, data, extra_headers=None, params=None):
+        headers = {
+            'Accept': self.accept_type,
+            'Content-Type': 'text/plain'
+        }
+        headers.update(extra_headers or {})
+        return self.request.get(
+            url, data=data, headers=headers, params=params
+        )
     def _make_request(self, url, data, extra_headers=None, params=None):
         extra_headers = extra_headers or {}
         token = 'Bearer {0}'.format(self.access_token.token)
@@ -81,7 +89,17 @@ class Client(object):
         response = self._check_for_exceeded_quota(response)
         response.raise_for_status()
         return response
+    def _make_request2(self, url, data, extra_headers=None, params=None):
+        extra_headers = extra_headers or {}
+        token = 'Bearer {0}'.format(self.access_token.token)
+        extra_headers['Authorization'] = token
 
+        response = self._get(url, data, extra_headers, params)
+        response = self._check_for_expired_token(response)
+        response = self._check_for_exceeded_quota(response)
+        response.raise_for_status()
+        return response
+    
     def _make_request_url(
         self, service, reference_type, input, endpoint, constituents
     ):
@@ -101,7 +119,13 @@ class Client(object):
             path, reference_type, input, endpoint, constituents
         )
         return self._make_request(url, input.as_api_input())
-
+    def _service_request2(
+        self, path, reference_type, input, endpoint, constituents
+    ):
+        url = self._make_request_url(
+            path, reference_type, input, endpoint, constituents
+        )
+        return self._make_request2(url, input.as_api_input())
     def _search_request(self, path, cql, range, constituents=None):
         url = self._make_request_url(path, None, None, None, constituents)
         return self._make_request(
@@ -129,7 +153,10 @@ class Client(object):
         return self._service_request(
             self.__family_path__, reference_type, input, endpoint, constituents
         )
-
+    def family2(self, reference_type, input, endpoint=None, constituents=None):
+        return self._service_request2(
+            self.__family_path__, reference_type, input, endpoint, constituents
+        )
     def image(self, path, range=1, document_format='application/tiff'):
         return self._image_request(
             path, range, document_format

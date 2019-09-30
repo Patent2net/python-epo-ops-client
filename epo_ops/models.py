@@ -39,7 +39,11 @@ class Original(BaseInput):
 
 
 class Docdb(BaseInput):
-    def __init__(self, number, country_code, kind_code=None, date=None):
+    def __init__(self, number, country_code, kind_code, date=None):
+        if not all([country_code, kind_code]):
+            raise MissingRequiredValue(
+                'number, country_code, and kind_code must be present'
+            )
         super(Docdb, self).__init__(number, country_code, kind_code, date)
 
 
@@ -95,6 +99,31 @@ class Request(object):
             response = self.env['response']
         else:
             response = requests.post(url, data, **kwargs)
+
+        for mw in reversed(self.middlewares):
+            response = mw.process_response(self.env, response)
+
+        self.reset_env()
+        return response
+    
+    def get(self, url, data=None, **kwargs):
+        self.reset_env()
+
+        for mw in self.middlewares:
+            url, data, kwargs = mw.process_request(
+                self.env, url, data, **kwargs
+            )
+
+        # Either get response from cache environment or request from upstream
+        # Remark:
+        # bool(<Response [200]>) is True
+        # bool(<Response [404]>) is False
+        if self.env['response'] is not None:
+            response = self.env['response']
+        else:
+            url = url.replace('epodoc', 'epodoc/'+data)
+            
+            response = requests.get(url,  **kwargs)
 
         for mw in reversed(self.middlewares):
             response = mw.process_response(self.env, response)
