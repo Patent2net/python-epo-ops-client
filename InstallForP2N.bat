@@ -1,0 +1,1 @@
+CALL conda activate P2N && python setup.py build > LogInstallClient.txt && python setup.py install > LogInstallClient.txt

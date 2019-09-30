@@ -6,7 +6,7 @@ import sys
 
 from setuptools import setup
 
-from __version__ import __version__
+from epo_ops import __version__
 
 if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
@@ -18,9 +18,9 @@ packages = [
 
 requires = ['python-dateutil', 'requests', 'six']
 
-readme = open('README.rst').read()
-history = open('HISTORY.rst').read()
-license = open('LICENSE').read()
+readme = open('README.rst', encoding='utf8').read()
+history = open('HISTORY.rst', encoding='utf8').read()
+license = open('LICENSE', encoding='utf8').read()
 
 setup(
     name='python-epo-ops-client',
